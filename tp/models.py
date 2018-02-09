@@ -9,9 +9,10 @@ class BaseModel(Model):
         database = db
 
 class User(BaseModel):
-    email    = CharField()
-    password = CharField()
-    mobile   = CharField()
+    email     = CharField()
+    password  = CharField()
+    mobile    = CharField()
+    stripe_id = CharField()
 
 class Code(BaseModel):
     string = CharField()

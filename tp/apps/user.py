@@ -5,6 +5,7 @@ from playhouse.shortcuts import model_to_dict, dict_to_model
 import os, binascii
 import nexmo
 import random
+import stripe
 
 client = nexmo.Client(key="72ca6f30", secret="1d2bc4041491906e")
 
@@ -67,7 +68,11 @@ def create_user():
   try:
     user = User.get(User.email == email)
   except Exception as error:
-    user = User.create(email=email, password=password, mobile=mobile)
+    customer = stripe.Customer.create(
+            email=email,
+            description="Test customer",
+    )
+    user = User.create(email=email, password=password, mobile=mobile, stripe_id=customer.id)
     user.save()
   # Convert our model (object) to dictionnary
   data = {"email" : user.email, "id" : user.id, "mobile" : user.mobile}

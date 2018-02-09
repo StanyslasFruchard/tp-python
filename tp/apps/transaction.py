@@ -3,6 +3,8 @@ from helpers import login_helper
 from models import Transaction, Token, User
 from playhouse.shortcuts import model_to_dict, dict_to_model
 import datetime
+import stripe
+stripe.api_key = "sk_test_bLP2o1oxvhNLYVkoL4C50poX"
 
 app_transaction = Blueprint('app_post', __name__)
 
@@ -117,3 +119,34 @@ def get_all_transactions():
   else:
     userToken = logged_checker(token)
     return jsonify({'data': list(Transaction.select().where(Transaction.user == userToken.user).dicts())}), 201
+
+# Buy something
+@app_transaction.route('/buy', methods=['POST'])
+def buy_something():
+  params = request.get_json() # dict
+  token  = params.get('token') 
+  if logged_checker(token) is False:
+    return jsonify({'error':'Not connected or token expired'})
+  else:
+    userToken = logged_checker(token)
+  card = {
+        "number": params.get('number'),
+        "exp_month": params.get('exp_month'),
+        "exp_year": params.get('exp_year'),
+        "cvc": params.get('cvc')
+    }
+  user_stripe_id = userToken.user.stripe_id
+  stripe_user = stripe.Customer.retrieve(user_stripe_id)
+  stripe_user.sources.create(card=card)
+  try:
+    charge = stripe.Charge.create(
+      amount=1000,
+      currency="usd",
+      customer=user_stripe_id,
+      description="Test charge",
+    )
+    return jsonify({'info':'Payement worked'})
+  except Exception as e:
+    print type(e)
+    return jsonify({'info':'Payement not worked'})
+  
